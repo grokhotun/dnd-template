@@ -82,39 +82,29 @@ const columnsFromBackend =
 
 const onDragEnd = (result, columns, setColumns) => {
   if (!result.destination) return;
-  const { source, destination } = result;
 
-  if (source.droppableId !== destination.droppableId) {
-    const sourceColumn = columns[source.droppableId];
-    const destColumn = columns[destination.droppableId];
-    const sourceItems = [...sourceColumn.items];
-    const destItems = [...destColumn.items];
-    const [removed] = sourceItems.splice(source.index, 1);
-    destItems.splice(destination.index, 0, removed);
-    setColumns({
-      ...columns,
-      [source.droppableId]: {
-        ...sourceColumn,
-        items: sourceItems
-      },
-      [destination.droppableId]: {
-        ...destColumn,
-        items: destItems
-      }
-    });
-  } else {
-    const column = columns[source.droppableId];
-    const copiedItems = [...column.items];
-    const [removed] = copiedItems.splice(source.index, 1);
-    copiedItems.splice(destination.index, 0, removed);
-    setColumns({
-      ...columns,
-      [source.droppableId]: {
-        ...column,
-        items: copiedItems
-      }
-    });
-  }
+  const copiedItems = [...columns];
+
+
+  const { source, destination } = result;
+  const { index: sourceCardIndex, droppableId: sourcePanelId } = source;
+  const { index: destinationCardIndex, droppableId: destinationPanelId } = destination;
+
+  const sourceColumnIndex = parseInt(sourcePanelId.replace("panel-", ""));
+  const destinationColumnIndex = parseInt(destinationPanelId.replace("panel-", ""));
+
+  copiedItems.map((item, currentIndex) => {
+    if (destinationColumnIndex === currentIndex) {
+      const [sourceCard] = copiedItems[sourceColumnIndex].cards.splice(sourceCardIndex, 1 );
+      const destinationCards = Array.from(copiedItems[destinationColumnIndex].cards);
+      destinationCards.splice(destinationCardIndex, 0, sourceCard);
+      item.cards = destinationCards;
+    }
+  })
+
+  setColumns(copiedItems);
+
+
 };
 
 
@@ -126,7 +116,7 @@ function App() {
     <div className="wrapper">
       <div className="container">
         <div className="mainblock">
-          <DragDropContext onDragEnd={result => console.log(result)} >
+          <DragDropContext onDragEnd={ result => onDragEnd(result, columns, setColumns)} >
             {
               columns.map((column, panelIndex) => {
                 console.log(column, panelIndex)
